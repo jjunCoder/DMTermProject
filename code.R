@@ -13,7 +13,7 @@ bitcoin.df <- filter(bitcoin.df, bitcoin.df$Volume.KRW > 0)
 
 # data partitioning - training data
 startDate = as.POSIXct("2017-07-01");
-endDate = as.POSIXct("2018-07-30");
+endDate = as.POSIXct("2017-08-01");
 all_dates = seq(startDate, endDate, 3600);
 
 for (j in 1:length(all_dates)) {
@@ -25,7 +25,7 @@ for (j in 1:length(all_dates)) {
 # 2019년 2월 부터 시작한다.
 # data partitioning - validation data
 startDate = as.POSIXct("2018-08-01");
-endDate = as.POSIXct("2019-04-15");
+endDate = as.POSIXct("2018-08-31");
 all_dates = seq(startDate, endDate, 3600);
 
 for (j in 1:length(all_dates)) {
@@ -65,22 +65,74 @@ summary(bitcoin.lm)
 head(train.df)
 View(train.df)
 
+
+
+
 # second model - time series ARIMA model
 # using ARIMA
-set.seed(1)
+
+train.ts <- ts(train.df$Volume.KRW, frequency = 24)
+plot(train.ts)
+plot(stl(train.ts, s.window="periodic"))
+
+adf.test(diff(log(train.ts)), alternative = "stationary", k=0)
+arima = auto.arima(train.ts, seasonal = TRUE, D=1)
+result <- forecast(arima, h = 24)
+accuracy(result)
+plot(result)
+
+
 count_ma = ts(train.df$Volume.KRW, frequency = 365)
 arima = auto.arima(count_ma, D=1)
 result <- forecast(arima, h = 365)
 accuracy(result)
+plot(result)
 
 library(zoom)
 plot(result) + abline(h=20)
 zm()
 
 
+# 2019.05.29 WED
+# 2019년 데이터는 1월 데이터 일부가 누락되어 있기 때문에
+# 2019년 2월 부터 시작한다.
+
+# data partitioning - model process data
+startDate = as.POSIXct("2019-02-01");
+endDate = as.POSIXct("2019-03-31");
+all_dates = seq(startDate, endDate, 3600);
+
+for (j in 1:length(all_dates)) {
+  filterdate = all_dates[j];
+  model.df = subset(bitcoin.df, bitcoin.df$Date %in% all_dates)
+}
+
+# data partitioning - validation data
+startDate = as.POSIXct("2019-04-01");
+endDate = as.POSIXct("2019-04-16");
+all_dates = seq(startDate, endDate, 3600);
+
+for (j in 1:length(all_dates)) {
+  filterdate = all_dates[j];
+  valid.df = subset(bitcoin.df, bitcoin.df$Date %in% all_dates)
+}
+
+# apply log2 to our target value
+model.df$Volume.KRW <- log2(model.df$Volume.KRW)
+valid.df$Volume.KRW <- log2(valid.df$Volume.KRW)
 
 
+model.ts <- ts(model.df$Volume.KRW, frequency = 24)
+plot(model.ts , xlab = "Day")
+# plot(stl(train.ts, s.window="periodic"))
+# adf.test(diff(log(train.ts)), alternative = "stationary", k=0)
+arima = auto.arima(model.ts, D=1)
+result <- forecast(arima, h=24)
+plot(result)
+predict(arima, model.df$Volume.KRW)
 
+accuracy(result, model.df$Volume.KRW)
+plot(result)
 
 
 
