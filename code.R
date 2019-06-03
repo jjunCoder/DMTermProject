@@ -106,6 +106,8 @@ for (j in 1:length(all_dates)) {
   filterdate = all_dates[j];
   model.df = subset(bitcoin.df, bitcoin.df$Date %in% all_dates)
 }
+# apply log2 to our target value
+model.df$Volume.KRW <- log2(model.df$Volume.KRW)
 
 # data partitioning - validation data
 startDate = as.POSIXct("2019-04-01");
@@ -116,9 +118,6 @@ for (j in 1:length(all_dates)) {
   filterdate = all_dates[j];
   valid.df = subset(bitcoin.df, bitcoin.df$Date %in% all_dates)
 }
-
-# apply log2 to our target value
-model.df$Volume.KRW <- log2(model.df$Volume.KRW)
 valid.df$Volume.KRW <- log2(valid.df$Volume.KRW)
 
 
